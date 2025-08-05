@@ -16,7 +16,7 @@ export const EmbedCodeGenerator: React.FC<EmbedCodeGeneratorProps> = ({ videoUrl
   const currentDomain = window.location.origin;
   
   // Generate the embed code
-  const embedCode = `<iframe src="${currentDomain}?video=${encodeURIComponent(videoUrl)}" width="800" height="450" frameborder="0" allowfullscreen style="max-width: 100%; height: auto; aspect-ratio: 16/9;"></iframe>`;
+  const embedCode = `<iframe src="${currentDomain}/embed?video=${encodeURIComponent(videoUrl)}" width="800" height="450" frameborder="0" allowfullscreen style="max-width: 100%; height: auto; aspect-ratio: 16/9;"></iframe>`;
 
   const handleCopy = async () => {
     try {
