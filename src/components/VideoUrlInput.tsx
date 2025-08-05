@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { validateVideoUrl } from '@/lib/videoUtils';
 
 interface VideoUrlInputProps {
   onVideoSubmit: (url: string) => void;
@@ -49,7 +50,8 @@ export const VideoUrlInput: React.FC<VideoUrlInputProps> = ({ onVideoSubmit, isL
     ],
     direct: [
       'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      'https://sample-videos.com/zip/10/mp4/SampleVideo_720x480_1mb.mp4'
+      'https://sample-videos.com/zip/10/mp4/SampleVideo_720x480_1mb.mp4',
+      'https://webinarkit.com/video/player?url=https%3A%2F%2Fexample.com%2Fvideo.mp4'
     ]
   };
 
@@ -62,7 +64,7 @@ export const VideoUrlInput: React.FC<VideoUrlInputProps> = ({ onVideoSubmit, isL
             Distraction-Free Video Player
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Enter a YouTube URL or direct video file link to start watching without distractions
+            Enter a YouTube URL, direct video file, or video player page - we'll automatically extract the video
           </CardDescription>
         </CardHeader>
         
@@ -156,6 +158,7 @@ export const VideoUrlInput: React.FC<VideoUrlInputProps> = ({ onVideoSubmit, isL
           <div className="mt-6 p-4 bg-muted rounded-lg">
             <h4 className="font-medium text-sm mb-2 text-foreground">Features:</h4>
             <ul className="text-xs text-muted-foreground space-y-1">
+              <li>• Smart URL extraction - works with video player pages</li>
               <li>• No progress bar - prevents skipping content</li>
               <li>• Auto-saves your progress every 5 seconds</li>
               <li>• Resume from where you left off</li>

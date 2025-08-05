@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { ResumeModal } from './ResumeModal';
 import { YouTubePlayer } from './YouTubePlayer';
 import { useVideoProgress } from '@/hooks/useVideoProgress';
+import { extractVideoUrl, isYouTubeUrl, getYouTubeId } from '@/lib/videoUtils';
 import { cn } from '@/lib/utils';
 
 interface VideoPlayerProps {
@@ -27,7 +28,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   
-  const { savedProgress, saveProgress, clearProgress, showResumeModal, setShowResumeModal } = useVideoProgress(src);
+  // Extract the actual video URL (handles URLs with video parameters)
+  const actualVideoUrl = extractVideoUrl(src);
+  console.log('Original URL:', src);
+  console.log('Extracted URL:', actualVideoUrl);
+  
+  const { savedProgress, saveProgress, clearProgress, showResumeModal, setShowResumeModal } = useVideoProgress(actualVideoUrl);
   
   const [state, setState] = useState<VideoState>({
     isPlaying: false,
@@ -39,17 +45,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
     error: null
   });
 
-  // Detect if source is YouTube
-  const isYoutube = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)/.test(src);
-  
-  // Extract YouTube video ID
-  const getYouTubeId = (url: string): string | null => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
-  };
-
-  const youtubeId = isYoutube ? getYouTubeId(src) : null;
+  // Detect if source is YouTube using the extracted URL
+  const isYoutube = isYouTubeUrl(actualVideoUrl);
+  const youtubeId = isYoutube ? getYouTubeId(actualVideoUrl) : null;
 
   // Video event handlers for regular HTML5 videos
   const handlePlay = () => {
@@ -254,7 +252,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
           <>
             <video
               ref={videoRef}
-              src={src}
+              src={actualVideoUrl}
               className="w-full h-full object-contain"
               preload="metadata"
               playsInline
