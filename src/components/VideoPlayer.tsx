@@ -3,6 +3,7 @@ import { Play, Pause, Volume2, VolumeX, Maximize, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ResumeModal } from './ResumeModal';
+import { YouTubePlayer } from './YouTubePlayer';
 import { useVideoProgress } from '@/hooks/useVideoProgress';
 import { cn } from '@/lib/utils';
 
@@ -50,7 +51,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
 
   const youtubeId = isYoutube ? getYouTubeId(src) : null;
 
-  // Video event handlers
+  // Video event handlers for regular HTML5 videos
   const handlePlay = () => {
     if (videoRef.current) {
       if (state.isPlaying) {
@@ -115,6 +116,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
     setShowResumeModal(false);
   };
 
+  // YouTube player event handlers
+  const handleYouTubeStateChange = (isPlaying: boolean) => {
+    setState(prev => ({ ...prev, isPlaying }));
+  };
+
+  const handleYouTubeVolumeChange = (volume: number, isMuted: boolean) => {
+    setState(prev => ({ ...prev, volume, isMuted }));
+  };
+
+  const handleYouTubeError = (error: string) => {
+    setState(prev => ({ ...prev, error, isLoading: false }));
+    onError?.(error);
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -153,8 +168,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Video event listeners
+  // Video event listeners for HTML5 videos
   useEffect(() => {
+    if (isYoutube) return; // Skip for YouTube videos
+    
     const video = videoRef.current;
     if (!video) return;
 
@@ -190,14 +207,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
       video.removeEventListener('error', handleError);
       video.removeEventListener('timeupdate', handleTimeUpdate);
     };
-  }, [saveProgress, onError]);
+  }, [saveProgress, onError, isYoutube]);
 
-  // Initialize volume
+  // Initialize volume for HTML5 videos
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && !isYoutube) {
       videoRef.current.volume = state.volume;
     }
-  }, [state.volume]);
+  }, [state.volume, isYoutube]);
 
   if (state.error) {
     return (
@@ -223,108 +240,113 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
       >
         {/* Video Element */}
         {isYoutube && youtubeId ? (
-          <iframe
-            src={`https://www.youtube.com/embed/${youtubeId}?controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&autohide=1&enablejsapi=1`}
-            className="w-full h-full"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
+          <YouTubePlayer
+            videoId={youtubeId}
+            onStateChange={handleYouTubeStateChange}
+            onVolumeChange={handleYouTubeVolumeChange}
+            onError={handleYouTubeError}
+            savedProgress={savedProgress || undefined}
+            onProgressUpdate={saveProgress}
+            showControls={state.showControls || !state.isPlaying}
+            onFullscreen={handleFullscreen}
           />
         ) : (
-          <video
-            ref={videoRef}
-            src={src}
-            className="w-full h-full object-contain"
-            preload="metadata"
-            playsInline
-          />
-        )}
+          <>
+            <video
+              ref={videoRef}
+              src={src}
+              className="w-full h-full object-contain"
+              preload="metadata"
+              playsInline
+            />
 
-        {/* Loading Overlay */}
-        {state.isLoading && (
-          <div className="absolute inset-0 bg-player-overlay flex items-center justify-center">
-            <Loader2 className="w-12 h-12 text-player-accent animate-spin" />
-          </div>
-        )}
+            {/* Loading Overlay */}
+            {state.isLoading && (
+              <div className="absolute inset-0 bg-player-overlay flex items-center justify-center">
+                <Loader2 className="w-12 h-12 text-player-accent animate-spin" />
+              </div>
+            )}
 
-        {/* Controls Overlay */}
-        <div
-          className={cn(
-            "absolute inset-0 transition-opacity duration-300",
-            state.showControls || !state.isPlaying ? "opacity-100" : "opacity-0"
-          )}
-        >
-          {/* Play/Pause Center Button */}
-          {!state.isPlaying && !state.isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePlay}
-                className="w-20 h-20 rounded-full bg-player-overlay hover:bg-player-controls-hover border border-player-border"
-              >
-                <Play className="w-8 h-8 text-player-accent" fill="currentColor" />
-              </Button>
-            </div>
-          )}
+            {/* Controls Overlay for HTML5 Videos */}
+            <div
+              className={cn(
+                "absolute inset-0 transition-opacity duration-300",
+                state.showControls || !state.isPlaying ? "opacity-100" : "opacity-0"
+              )}
+            >
+              {/* Play/Pause Center Button */}
+              {!state.isPlaying && !state.isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePlay}
+                    className="w-20 h-20 rounded-full bg-player-overlay hover:bg-player-controls-hover border border-player-border"
+                  >
+                    <Play className="w-8 h-8 text-player-accent" fill="currentColor" />
+                  </Button>
+                </div>
+              )}
 
-          {/* Bottom Controls Bar */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-controls p-4">
-            <div className="flex items-center gap-4">
-              {/* Play/Pause */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePlay}
-                className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
-              >
-                {state.isPlaying ? (
-                  <Pause className="w-5 h-5" />
-                ) : (
-                  <Play className="w-5 h-5" fill="currentColor" />
-                )}
-              </Button>
+              {/* Bottom Controls Bar */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-controls p-4">
+                <div className="flex items-center gap-4">
+                  {/* Play/Pause */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePlay}
+                    className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
+                  >
+                    {state.isPlaying ? (
+                      <Pause className="w-5 h-5" />
+                    ) : (
+                      <Play className="w-5 h-5" fill="currentColor" />
+                    )}
+                  </Button>
 
-              {/* Volume Controls */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleVolumeToggle}
-                  className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
-                >
-                  {state.isMuted || state.volume === 0 ? (
-                    <VolumeX className="w-5 h-5" />
-                  ) : (
-                    <Volume2 className="w-5 h-5" />
-                  )}
-                </Button>
-                <div className="w-20">
-                  <Slider
-                    value={[state.isMuted ? 0 : state.volume * 100]}
-                    onValueChange={handleVolumeChange}
-                    max={100}
-                    step={1}
-                    className="cursor-pointer"
-                  />
+                  {/* Volume Controls */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleVolumeToggle}
+                      className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
+                    >
+                      {state.isMuted || state.volume === 0 ? (
+                        <VolumeX className="w-5 h-5" />
+                      ) : (
+                        <Volume2 className="w-5 h-5" />
+                      )}
+                    </Button>
+                    <div className="w-20">
+                      <Slider
+                        value={[state.isMuted ? 0 : state.volume * 100]}
+                        onValueChange={handleVolumeChange}
+                        max={100}
+                        step={1}
+                        className="cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Spacer */}
+                  <div className="flex-1" />
+
+                  {/* Fullscreen */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleFullscreen}
+                    className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
+                  >
+                    <Maximize className="w-5 h-5" />
+                  </Button>
                 </div>
               </div>
-
-              {/* Spacer */}
-              <div className="flex-1" />
-
-              {/* Fullscreen */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleFullscreen}
-                className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
-              >
-                <Maximize className="w-5 h-5" />
-              </Button>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Resume Modal */}
