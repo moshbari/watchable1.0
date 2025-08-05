@@ -15,6 +15,8 @@ interface YouTubePlayerProps {
   onFullscreen: () => void;
   playButtonColor?: string;
   playButtonSize?: number;
+  shouldSeekTo?: number;
+  onSeekComplete?: () => void;
 }
 
 declare global {
@@ -34,7 +36,9 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   showControls,
   onFullscreen,
   playButtonColor = '#ff0000',
-  playButtonSize = 96
+  playButtonSize = 96,
+  shouldSeekTo,
+  onSeekComplete
 }) => {
   const playerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
@@ -43,6 +47,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const [volume, setVolume] = useState(80);
   const [isMuted, setIsMuted] = useState(false);
   const progressIntervalRef = useRef<NodeJS.Timeout>();
+  const [hasResumed, setHasResumed] = useState(false);
 
   // Load YouTube API
   useEffect(() => {
@@ -88,9 +93,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
                 console.log('YouTube player ready');
                 setIsLoading(false);
                 event.target.setVolume(volume);
-                if (savedProgress && savedProgress > 10) {
-                  event.target.seekTo(savedProgress, true);
-                }
+                // Don't auto-resume, let the modal handle it
               },
               onStateChange: (event: any) => {
                 const isCurrentlyPlaying = event.data === window.YT.PlayerState.PLAYING;
@@ -149,6 +152,15 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       }
     };
   }, [videoId]);
+
+  // Handle seek requests from parent component
+  useEffect(() => {
+    if (shouldSeekTo && ytPlayerRef.current && !isLoading) {
+      ytPlayerRef.current.seekTo(shouldSeekTo, true);
+      setHasResumed(true);
+      onSeekComplete?.();
+    }
+  }, [shouldSeekTo, isLoading, onSeekComplete]);
 
   const startProgressTracking = () => {
     if (progressIntervalRef.current) return;

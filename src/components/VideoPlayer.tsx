@@ -23,6 +23,7 @@ interface VideoState {
   showControls: boolean;
   isLoading: boolean;
   error: string | null;
+  shouldSeekTo?: number;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
@@ -115,10 +116,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleResumeChoice = (shouldResume: boolean) => {
-    if (shouldResume && savedProgress && videoRef.current) {
-      videoRef.current.currentTime = savedProgress;
-    }
     setShowResumeModal(false);
+    if (shouldResume && savedProgress) {
+      if (isYoutube) {
+        // For YouTube videos, we'll trigger the seek through a state change
+        setState(prev => ({ ...prev, shouldSeekTo: savedProgress }));
+      } else if (videoRef.current) {
+        videoRef.current.currentTime = savedProgress;
+      }
+    }
   };
 
   // YouTube player event handlers
@@ -256,6 +262,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             onFullscreen={handleFullscreen}
             playButtonColor={playButtonColor}
             playButtonSize={playButtonSize}
+            shouldSeekTo={state.shouldSeekTo}
+            onSeekComplete={() => setState(prev => ({ ...prev, shouldSeekTo: undefined }))}
           />
         ) : (
           <>
@@ -370,7 +378,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         )}
       </div>
 
-      {/* Resume Modal */}
+      {/* Resume Modal - Works for both YouTube and HTML5 videos */}
       {showResumeModal && savedProgress && (
         <ResumeModal
           isOpen={showResumeModal}
