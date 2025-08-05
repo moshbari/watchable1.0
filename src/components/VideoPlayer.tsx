@@ -254,6 +254,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             onProgressUpdate={saveProgress}
             showControls={state.showControls || !state.isPlaying}
             onFullscreen={handleFullscreen}
+            playButtonColor={playButtonColor}
+            playButtonSize={playButtonSize}
           />
         ) : (
           <>

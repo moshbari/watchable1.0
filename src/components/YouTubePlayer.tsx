@@ -13,6 +13,8 @@ interface YouTubePlayerProps {
   onProgressUpdate?: (currentTime: number) => void;
   showControls: boolean;
   onFullscreen: () => void;
+  playButtonColor?: string;
+  playButtonSize?: number;
 }
 
 declare global {
@@ -30,7 +32,9 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   savedProgress,
   onProgressUpdate,
   showControls,
-  onFullscreen
+  onFullscreen,
+  playButtonColor = '#ff0000',
+  playButtonSize = 96
 }) => {
   const playerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
@@ -219,16 +223,30 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           showControls || !isPlaying ? "opacity-100" : "opacity-0"
         )}
       >
-        {/* Play/Pause Center Button */}
+        {/* Play/Pause Center Button - YouTube Style */}
         {!isPlaying && !isLoading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
             <Button
               variant="ghost"
               size="icon"
               onClick={handlePlay}
-              className="w-20 h-20 rounded-full bg-player-overlay hover:bg-player-controls-hover border border-player-border"
+              className="rounded-full border-0 shadow-xl transition-all duration-200 hover:scale-110 p-0"
+              style={{
+                width: `${playButtonSize}px`,
+                height: `${playButtonSize}px`,
+                backgroundColor: playButtonColor,
+              }}
             >
-              <Play className="w-8 h-8 text-player-accent" fill="currentColor" />
+              <div className="relative">
+                <Play 
+                  className="text-white ml-1" 
+                  fill="currentColor" 
+                  style={{ 
+                    width: `${playButtonSize * 0.4}px`, 
+                    height: `${playButtonSize * 0.4}px` 
+                  }}
+                />
+              </div>
             </Button>
           </div>
         )}
