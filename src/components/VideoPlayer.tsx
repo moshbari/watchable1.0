@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 interface VideoPlayerProps {
   src: string;
   onError?: (error: string) => void;
+  playButtonColor?: string;
+  playButtonSize?: number;
 }
 
 interface VideoState {
@@ -23,7 +25,12 @@ interface VideoState {
   error: string | null;
 }
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
+  src, 
+  onError, 
+  playButtonColor = '#ff0000', 
+  playButtonSize = 96 
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
@@ -279,10 +286,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
                     variant="ghost"
                     size="icon"
                     onClick={handlePlay}
-                    className="w-24 h-24 rounded-full bg-black/80 hover:bg-black/90 border-0 shadow-xl transition-all duration-200 hover:scale-110"
+                    className="rounded-full border-0 shadow-xl transition-all duration-200 hover:scale-110 p-0"
+                    style={{
+                      width: `${playButtonSize}px`,
+                      height: `${playButtonSize}px`,
+                      backgroundColor: playButtonColor,
+                    }}
                   >
                     <div className="relative">
-                      <Play className="w-10 h-10 text-white ml-1" fill="currentColor" />
+                      <Play 
+                        className="text-white ml-1" 
+                        fill="currentColor" 
+                        style={{ 
+                          width: `${playButtonSize * 0.4}px`, 
+                          height: `${playButtonSize * 0.4}px` 
+                        }}
+                      />
                     </div>
                   </Button>
                 </div>

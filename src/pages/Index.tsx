@@ -5,20 +5,32 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { VideoUrlInput } from '@/components/VideoUrlInput';
 import { EmbedCodeGenerator } from '@/components/EmbedCodeGenerator';
 import { TimedButton } from '@/components/TimedButton';
+import { PlayButtonCustomizer } from '@/components/PlayButtonCustomizer';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [currentVideo, setCurrentVideo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [playButtonColor, setPlayButtonColor] = useState('#ff0000');
+  const [playButtonSize, setPlayButtonSize] = useState(96);
+  const [showCustomizer, setShowCustomizer] = useState(false);
   const { toast } = useToast();
 
   // Check for video parameter in URL on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const videoParam = urlParams.get('video');
+    const colorParam = urlParams.get('playButtonColor');
+    const sizeParam = urlParams.get('playButtonSize');
     
     if (videoParam) {
       setCurrentVideo(decodeURIComponent(videoParam));
+    }
+    if (colorParam) {
+      setPlayButtonColor(decodeURIComponent(colorParam));
+    }
+    if (sizeParam) {
+      setPlayButtonSize(parseInt(sizeParam) || 96);
     }
   }, []);
 
@@ -78,12 +90,26 @@ const Index = () => {
             <VideoPlayer 
               src={currentVideo} 
               onError={handleVideoError}
+              playButtonColor={playButtonColor}
+              playButtonSize={playButtonSize}
             />
           </div>
 
-          {/* Embed Code Generator & Timed Button */}
+          {/* Customization & Embed Options */}
           <div className="max-w-4xl mx-auto mt-8 space-y-6">
-            <EmbedCodeGenerator videoUrl={currentVideo} />
+            <PlayButtonCustomizer
+              color={playButtonColor}
+              size={playButtonSize}
+              onColorChange={setPlayButtonColor}
+              onSizeChange={setPlayButtonSize}
+              isOpen={showCustomizer}
+              onToggle={setShowCustomizer}
+            />
+            <EmbedCodeGenerator 
+              videoUrl={currentVideo} 
+              playButtonColor={playButtonColor}
+              playButtonSize={playButtonSize}
+            />
             <TimedButton />
           </div>
 

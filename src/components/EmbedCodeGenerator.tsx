@@ -6,17 +6,29 @@ import { useToast } from '@/hooks/use-toast';
 
 interface EmbedCodeGeneratorProps {
   videoUrl: string;
+  playButtonColor?: string;
+  playButtonSize?: number;
 }
 
-export const EmbedCodeGenerator: React.FC<EmbedCodeGeneratorProps> = ({ videoUrl }) => {
+export const EmbedCodeGenerator: React.FC<EmbedCodeGeneratorProps> = ({ 
+  videoUrl, 
+  playButtonColor = '#ff0000', 
+  playButtonSize = 96 
+}) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   // Get the current domain (published Lovable URL)
   const currentDomain = window.location.origin;
   
-  // Generate the embed code
-  const embedCode = `<iframe src="${currentDomain}/embed?video=${encodeURIComponent(videoUrl)}" width="800" height="450" frameborder="0" allowfullscreen style="max-width: 100%; height: auto; aspect-ratio: 16/9;"></iframe>`;
+  // Generate the embed code with play button customization
+  const embedParams = new URLSearchParams({
+    video: videoUrl,
+    playButtonColor: playButtonColor,
+    playButtonSize: playButtonSize.toString()
+  });
+  
+  const embedCode = `<iframe src="${currentDomain}/embed?${embedParams.toString()}" width="800" height="450" frameborder="0" allowfullscreen style="max-width: 100%; height: auto; aspect-ratio: 16/9;"></iframe>`;
 
   const handleCopy = async () => {
     try {
