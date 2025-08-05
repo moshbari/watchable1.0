@@ -80,6 +80,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               cc_load_policy: 0,
               autohide: 1,
               playsinline: 1,
+              enablejsapi: 1,
               origin: window.location.origin
             },
             events: {
@@ -104,8 +105,30 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               },
               onError: (event: any) => {
                 console.error('YouTube player error:', event.data);
+                console.log('Current origin:', window.location.origin);
+                console.log('Video ID:', videoId);
                 setIsLoading(false);
-                onError?.('YouTube video failed to load. Please check the URL and try again.');
+                
+                let errorMessage = 'YouTube video failed to load.';
+                switch (event.data) {
+                  case 2:
+                    errorMessage = 'Invalid video ID.';
+                    break;
+                  case 5:
+                    errorMessage = 'Video cannot be played in an embedded player.';
+                    break;
+                  case 100:
+                    errorMessage = 'Video not found or private.';
+                    break;
+                  case 101:
+                  case 150:
+                    errorMessage = 'Video embedding has been disabled by the owner.';
+                    break;
+                  default:
+                    errorMessage = 'YouTube video failed to load. Please check the URL and try again.';
+                }
+                
+                onError?.(errorMessage);
               }
             }
           });
