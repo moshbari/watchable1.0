@@ -1,0 +1,340 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { ResumeModal } from './ResumeModal';
+import { useVideoProgress } from '@/hooks/useVideoProgress';
+import { cn } from '@/lib/utils';
+
+interface VideoPlayerProps {
+  src: string;
+  onError?: (error: string) => void;
+}
+
+interface VideoState {
+  isPlaying: boolean;
+  isMuted: boolean;
+  volume: number;
+  isFullscreen: boolean;
+  showControls: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  const { savedProgress, saveProgress, clearProgress, showResumeModal, setShowResumeModal } = useVideoProgress(src);
+  
+  const [state, setState] = useState<VideoState>({
+    isPlaying: false,
+    isMuted: false,
+    volume: 0.8,
+    isFullscreen: false,
+    showControls: true,
+    isLoading: true,
+    error: null
+  });
+
+  // Detect if source is YouTube
+  const isYoutube = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)/.test(src);
+  
+  // Extract YouTube video ID
+  const getYouTubeId = (url: string): string | null => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
+
+  const youtubeId = isYoutube ? getYouTubeId(src) : null;
+
+  // Video event handlers
+  const handlePlay = () => {
+    if (videoRef.current) {
+      if (state.isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+    }
+  };
+
+  const handleVolumeToggle = () => {
+    if (videoRef.current) {
+      const newMuted = !state.isMuted;
+      videoRef.current.muted = newMuted;
+      setState(prev => ({ ...prev, isMuted: newMuted }));
+    }
+  };
+
+  const handleVolumeChange = (value: number[]) => {
+    const volume = value[0] / 100;
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+      videoRef.current.muted = volume === 0;
+      setState(prev => ({ 
+        ...prev, 
+        volume,
+        isMuted: volume === 0
+      }));
+    }
+  };
+
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement && containerRef.current) {
+      containerRef.current.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const showControlsTemporarily = () => {
+    setState(prev => ({ ...prev, showControls: true }));
+    
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    
+    controlsTimeoutRef.current = setTimeout(() => {
+      setState(prev => ({ ...prev, showControls: false }));
+    }, 3000);
+  };
+
+  const handleMouseMove = () => {
+    if (state.isPlaying) {
+      showControlsTemporarily();
+    }
+  };
+
+  const handleResumeChoice = (shouldResume: boolean) => {
+    if (shouldResume && savedProgress && videoRef.current) {
+      videoRef.current.currentTime = savedProgress;
+    }
+    setShowResumeModal(false);
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return;
+      
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          handlePlay();
+          break;
+        case 'KeyF':
+          e.preventDefault();
+          handleFullscreen();
+          break;
+        case 'KeyM':
+          e.preventDefault();
+          handleVolumeToggle();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [state.isPlaying]);
+
+  // Fullscreen change listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setState(prev => ({ 
+        ...prev, 
+        isFullscreen: !!document.fullscreenElement 
+      }));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Video event listeners
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadStart = () => setState(prev => ({ ...prev, isLoading: true, error: null }));
+    const handleCanPlay = () => setState(prev => ({ ...prev, isLoading: false }));
+    const handlePlaying = () => setState(prev => ({ ...prev, isPlaying: true }));
+    const handlePause = () => setState(prev => ({ ...prev, isPlaying: false }));
+    const handleError = () => {
+      const error = 'Failed to load video. Please check the URL and try again.';
+      setState(prev => ({ ...prev, error, isLoading: false }));
+      onError?.(error);
+    };
+
+    // Progress saving
+    const handleTimeUpdate = () => {
+      if (video.currentTime > 0) {
+        saveProgress(video.currentTime);
+      }
+    };
+
+    video.addEventListener('loadstart', handleLoadStart);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('playing', handlePlaying);
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('error', handleError);
+    video.addEventListener('timeupdate', handleTimeUpdate);
+
+    return () => {
+      video.removeEventListener('loadstart', handleLoadStart);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('error', handleError);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+    };
+  }, [saveProgress, onError]);
+
+  // Initialize volume
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = state.volume;
+    }
+  }, [state.volume]);
+
+  if (state.error) {
+    return (
+      <div className="w-full aspect-video bg-player-bg border border-player-border rounded-lg flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Video Error</p>
+          <p className="text-muted-foreground text-sm">{state.error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div 
+        ref={containerRef}
+        className={cn(
+          "relative w-full aspect-video bg-player-bg border border-player-border rounded-lg overflow-hidden shadow-player group",
+          state.isFullscreen && "rounded-none"
+        )}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => state.isPlaying && setState(prev => ({ ...prev, showControls: false }))}
+      >
+        {/* Video Element */}
+        {isYoutube && youtubeId ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeId}?controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&autohide=1&enablejsapi=1`}
+            className="w-full h-full"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            src={src}
+            className="w-full h-full object-contain"
+            preload="metadata"
+            playsInline
+          />
+        )}
+
+        {/* Loading Overlay */}
+        {state.isLoading && (
+          <div className="absolute inset-0 bg-player-overlay flex items-center justify-center">
+            <Loader2 className="w-12 h-12 text-player-accent animate-spin" />
+          </div>
+        )}
+
+        {/* Controls Overlay */}
+        <div
+          className={cn(
+            "absolute inset-0 transition-opacity duration-300",
+            state.showControls || !state.isPlaying ? "opacity-100" : "opacity-0"
+          )}
+        >
+          {/* Play/Pause Center Button */}
+          {!state.isPlaying && !state.isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePlay}
+                className="w-20 h-20 rounded-full bg-player-overlay hover:bg-player-controls-hover border border-player-border"
+              >
+                <Play className="w-8 h-8 text-player-accent" fill="currentColor" />
+              </Button>
+            </div>
+          )}
+
+          {/* Bottom Controls Bar */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-controls p-4">
+            <div className="flex items-center gap-4">
+              {/* Play/Pause */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePlay}
+                className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
+              >
+                {state.isPlaying ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5" fill="currentColor" />
+                )}
+              </Button>
+
+              {/* Volume Controls */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleVolumeToggle}
+                  className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
+                >
+                  {state.isMuted || state.volume === 0 ? (
+                    <VolumeX className="w-5 h-5" />
+                  ) : (
+                    <Volume2 className="w-5 h-5" />
+                  )}
+                </Button>
+                <div className="w-20">
+                  <Slider
+                    value={[state.isMuted ? 0 : state.volume * 100]}
+                    onValueChange={handleVolumeChange}
+                    max={100}
+                    step={1}
+                    className="cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Fullscreen */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleFullscreen}
+                className="text-foreground hover:text-player-accent hover:bg-player-controls-hover"
+              >
+                <Maximize className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Resume Modal */}
+      {showResumeModal && savedProgress && (
+        <ResumeModal
+          isOpen={showResumeModal}
+          onChoice={handleResumeChoice}
+          timestamp={savedProgress}
+        />
+      )}
+    </>
+  );
+};
