@@ -272,16 +272,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, onError }) => {
                 state.showControls || !state.isPlaying ? "opacity-100" : "opacity-0"
               )}
             >
-              {/* Play/Pause Center Button */}
+              {/* Play/Pause Center Button - YouTube Style */}
               {!state.isPlaying && !state.isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handlePlay}
-                    className="w-20 h-20 rounded-full bg-player-overlay hover:bg-player-controls-hover border border-player-border"
+                    className="w-24 h-24 rounded-full bg-black/80 hover:bg-black/90 border-0 shadow-xl transition-all duration-200 hover:scale-110"
                   >
-                    <Play className="w-8 h-8 text-player-accent" fill="currentColor" />
+                    <div className="relative">
+                      <Play className="w-10 h-10 text-white ml-1" fill="currentColor" />
+                    </div>
                   </Button>
                 </div>
               )}

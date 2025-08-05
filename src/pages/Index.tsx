@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { VideoUrlInput } from '@/components/VideoUrlInput';
 import { EmbedCodeGenerator } from '@/components/EmbedCodeGenerator';
+import { TimedButton } from '@/components/TimedButton';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -80,9 +81,10 @@ const Index = () => {
             />
           </div>
 
-          {/* Embed Code Generator */}
-          <div className="max-w-4xl mx-auto mt-8">
+          {/* Embed Code Generator & Timed Button */}
+          <div className="max-w-4xl mx-auto mt-8 space-y-6">
             <EmbedCodeGenerator videoUrl={currentVideo} />
+            <TimedButton />
           </div>
 
           {/* Instructions */}
