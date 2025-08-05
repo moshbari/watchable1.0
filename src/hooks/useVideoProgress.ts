@@ -22,19 +22,28 @@ export const useVideoProgress = (videoUrl: string) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       console.log('Checking stored progress for:', videoUrl);
+      console.log('localStorage content:', stored);
       if (stored) {
         const progressData: VideoProgress[] = JSON.parse(stored);
         console.log('All stored progress:', progressData);
         const videoProgress = progressData.find(p => p.url === videoUrl);
         console.log('Progress for current video:', videoProgress);
+        console.log('RESUME_THRESHOLD:', RESUME_THRESHOLD);
         
-        if (videoProgress && videoProgress.timestamp >= RESUME_THRESHOLD) {
-          console.log('Setting saved progress and showing resume modal:', videoProgress.timestamp);
-          setSavedProgress(videoProgress.timestamp);
-          setShowResumeModal(true);
+        if (videoProgress) {
+          console.log('Found progress, timestamp:', videoProgress.timestamp, 'threshold:', RESUME_THRESHOLD);
+          if (videoProgress.timestamp >= RESUME_THRESHOLD) {
+            console.log('Setting saved progress and showing resume modal:', videoProgress.timestamp);
+            setSavedProgress(videoProgress.timestamp);
+            setShowResumeModal(true);
+          } else {
+            console.log('Progress below threshold:', videoProgress.timestamp, '<', RESUME_THRESHOLD);
+          }
         } else {
-          console.log('No progress found or below threshold');
+          console.log('No progress found for this video URL');
         }
+      } else {
+        console.log('No stored progress found in localStorage');
       }
     } catch (error) {
       console.error('Error loading video progress:', error);
@@ -42,11 +51,14 @@ export const useVideoProgress = (videoUrl: string) => {
   }, [videoUrl]);
 
   const saveProgress = useCallback((currentTime: number) => {
+    console.log('saveProgress called with currentTime:', currentTime, 'for URL:', videoUrl);
     // Only save if enough time has passed and video has been watched for minimum duration
     if (currentTime < MIN_PROGRESS || currentTime - lastSavedTimeRef.current < 5) {
+      console.log('Not saving - currentTime < MIN_PROGRESS or too soon since last save');
       return;
     }
 
+    console.log('Scheduling save for URL:', videoUrl, 'at time:', currentTime);
     // Debounce saves to avoid excessive localStorage writes
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -54,6 +66,7 @@ export const useVideoProgress = (videoUrl: string) => {
 
     saveTimeoutRef.current = setTimeout(() => {
       try {
+        console.log('Actually saving progress for URL:', videoUrl, 'at time:', currentTime);
         const stored = localStorage.getItem(STORAGE_KEY);
         let progressData: VideoProgress[] = stored ? JSON.parse(stored) : [];
         
@@ -72,6 +85,7 @@ export const useVideoProgress = (videoUrl: string) => {
         progressData = progressData.slice(0, 10);
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+        console.log('Progress saved successfully. New localStorage content:', JSON.stringify(progressData));
         lastSavedTimeRef.current = currentTime;
       } catch (error) {
         console.error('Error saving video progress:', error);
