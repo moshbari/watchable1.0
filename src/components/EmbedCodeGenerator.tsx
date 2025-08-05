@@ -28,7 +28,7 @@ export const EmbedCodeGenerator: React.FC<EmbedCodeGeneratorProps> = ({
     playButtonSize: playButtonSize.toString()
   });
   
-  const embedCode = `<iframe src="${currentDomain}/embed?${embedParams.toString()}" width="800" height="450" frameborder="0" allowfullscreen style="max-width: 100%; height: auto; aspect-ratio: 16/9;"></iframe>`;
+  const embedCode = `<iframe src="${currentDomain}/embed?${embedParams.toString()}" width="800" height="450" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" style="max-width: 100%; height: auto; aspect-ratio: 16/9;"></iframe>`;
 
   const handleCopy = async () => {
     try {
