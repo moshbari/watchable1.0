@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VideoPlayer } from '@/components/VideoPlayer';
@@ -10,6 +10,16 @@ const Index = () => {
   const [currentVideo, setCurrentVideo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Check for video parameter in URL on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoParam = urlParams.get('video');
+    
+    if (videoParam) {
+      setCurrentVideo(decodeURIComponent(videoParam));
+    }
+  }, []);
 
   const handleVideoSubmit = async (url: string) => {
     setIsLoading(true);
