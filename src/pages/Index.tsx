@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { VideoUrlInput } from '@/components/VideoUrlInput';
+import { EmbedCodeGenerator } from '@/components/EmbedCodeGenerator';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -67,6 +68,11 @@ const Index = () => {
               src={currentVideo} 
               onError={handleVideoError}
             />
+          </div>
+
+          {/* Embed Code Generator */}
+          <div className="max-w-4xl mx-auto mt-8">
+            <EmbedCodeGenerator videoUrl={currentVideo} />
           </div>
 
           {/* Instructions */}
