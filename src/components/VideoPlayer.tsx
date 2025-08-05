@@ -41,7 +41,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   console.log('Original URL:', src);
   console.log('Extracted URL:', actualVideoUrl);
   
-  const { savedProgress, saveProgress, clearProgress, showResumeModal, setShowResumeModal } = useVideoProgress(actualVideoUrl);
+  const { savedProgress, saveProgress, clearProgress, showResumeModal, setShowResumeModal } = useVideoProgress(src);
   
   const [state, setState] = useState<VideoState>({
     isPlaying: false,
