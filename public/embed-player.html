@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distraction-Free Video Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #1a1d21;
+            color: #f1f5f9;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1a1d21;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px -12px rgba(26, 29, 33, 0.8);
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+        }
+
+        .video-element {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .controls-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: transparent;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .controls-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .controls-overlay.hide {
+            opacity: 0;
+        }
+
+        .play-button-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 29, 33, 0.9);
+            border: 1px solid #2d3748;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .play-button-center:hover {
+            background: rgba(45, 55, 72, 0.9);
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .play-icon {
+            width: 32px;
+            height: 32px;
+            fill: #22c55e;
+            margin-left: 4px;
+        }
+
+        .controls-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(26, 29, 33, 0.9) 100%);
+            padding: 16px;
+            pointer-events: auto;
+        }
+
+        .controls-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .control-button {
+            background: transparent;
+            border: none;
+            color: #f1f5f9;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-button:hover {
+            color: #22c55e;
+            background: rgba(45, 55, 72, 0.8);
+        }
+
+        .control-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            background: #2d3748;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #22c55e;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 29, 33, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #2d3748;
+            border-top: 3px solid #22c55e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            color: #ef4444;
+        }
+
+        .resume-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .resume-content {
+            background: linear-gradient(135deg, rgba(26, 29, 33, 0.95), rgba(35, 39, 46, 0.95));
+            border: 1px solid #2d3748;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .resume-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .resume-description {
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+
+        .resume-time {
+            font-size: 24px;
+            font-family: monospace;
+            color: #22c55e;
+            margin-bottom: 4px;
+        }
+
+        .resume-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+
+        .resume-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .resume-button {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .resume-button.primary {
+            background: #22c55e;
+            color: #1a1d21;
+        }
+
+        .resume-button.primary:hover {
+            background: #16a34a;
+        }
+
+        .resume-button.secondary {
+            background: transparent;
+            color: #f1f5f9;
+            border: 1px solid #2d3748;
+        }
+
+        .resume-button.secondary:hover {
+            background: rgba(45, 55, 72, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="videoPlayer"></div>
+
+    <script>
+        class DistractionFreePlayer {
+            constructor(containerId, videoUrl) {
+                this.container = document.getElementById(containerId);
+                this.videoUrl = this.extractVideoUrl(videoUrl);
+                this.isYoutube = this.isYouTubeUrl(this.videoUrl);
+                this.youtubeId = this.isYoutube ? this.getYouTubeId(this.videoUrl) : null;
+                
+                this.state = {
+                    isPlaying: false,
+                    isMuted: false,
+                    volume: 0.8,
+                    showControls: true,
+                    isLoading: true
+                };
+
+                this.progressKey = `video_progress_${this.videoUrl}`;
+                this.init();
+            }
+
+            extractVideoUrl(inputUrl) {
+                try {
+                    const url = new URL(inputUrl);
+                    const videoParams = ['url', 'src', 'video', 'file', 'media'];
+                    
+                    for (const param of videoParams) {
+                        const videoUrl = url.searchParams.get(param);
+                        if (videoUrl) {
+                            const decodedUrl = decodeURIComponent(videoUrl);
+                            if (this.isVideoFileUrl(decodedUrl)) {
+                                return decodedUrl;
+                            }
+                        }
+                    }
+                    return inputUrl;
+                } catch {
+                    return inputUrl;
+                }
+            }
+
+            isVideoFileUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    const pathname = urlObj.pathname.toLowerCase();
+                    const videoExtensions = ['.mp4', '.webm', '.ogg', '.ogv', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.m4v', '.3gp'];
+                    return videoExtensions.some(ext => pathname.endsWith(ext));
+                } catch {
+                    return false;
+                }
+            }
+
+            isYouTubeUrl(url) {
+                return /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)/.test(url);
+            }
+
+            getYouTubeId(url) {
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+                const match = url.match(regExp);
+                return match && match[2].length === 11 ? match[2] : null;
+            }
+
+            init() {
+                this.render();
+                this.bindEvents();
+                this.checkSavedProgress();
+            }
+
+            render() {
+                const savedProgress = this.getSavedProgress();
+                
+                this.container.innerHTML = `
+                    <div class="video-container">
+                        <div class="video-wrapper">
+                            ${this.isYoutube ? this.renderYouTubePlayer() : this.renderVideoPlayer()}
+                            ${this.state.isLoading ? '<div class="loading-overlay"><div class="loading-spinner"></div></div>' : ''}
+                            <div class="controls-overlay ${this.state.showControls ? 'show' : 'hide'}" id="controlsOverlay">
+                                ${!this.state.isPlaying ? `
+                                    <div class="play-button-center" id="playButtonCenter">
+                                        <svg class="play-icon" viewBox="0 0 24 24">
+                                            <polygon points="5,3 19,12 5,21" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                ` : ''}
+                                <div class="controls-bar">
+                                    <div class="controls-content">
+                                        <button class="control-button" id="playButton">
+                                            <svg class="control-icon" viewBox="0 0 24 24" fill="currentColor">
+                                                ${this.state.isPlaying ? 
+                                                    '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' :
+                                                    '<polygon points="5,3 19,12 5,21"/>'
+                                                }
+                                            </svg>
+                                        </button>
+                                        <div class="volume-container">
+                                            <button class="control-button" id="volumeButton">
+                                                <svg class="control-icon" viewBox="0 0 24 24" fill="currentColor">
+                                                    ${this.state.isMuted ? 
+                                                        '<path d="M16 9a5 5 0 0 1 0 6m-1.5-8.7A7 7 0 0 1 23 12a7 7 0 0 1-8.5 6.7M11 5 6 9H2v6h4l5 4z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>' :
+                                                        '<polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>'
+                                                    }
+                                                </svg>
+                                            </button>
+                                            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="${this.state.volume * 100}">
+                                        </div>
+                                        <div class="spacer"></div>
+                                        <button class="control-button" id="fullscreenButton">
+                                            <svg class="control-icon" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderYouTubePlayer() {
+                return `
+                    <iframe 
+                        id="youtubePlayer"
+                        class="video-element" 
+                        src="https://www.youtube.com/embed/${this.youtubeId}?enablejsapi=1&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&autohide=1&playsinline=1&origin=${window.location.origin}"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                `;
+            }
+
+            renderVideoPlayer() {
+                return `
+                    <video 
+                        id="videoElement" 
+                        class="video-element" 
+                        src="${this.videoUrl}" 
+                        preload="metadata" 
+                        playsinline>
+                    </video>
+                `;
+            }
+
+            bindEvents() {
+                // Play buttons
+                const playButtonCenter = document.getElementById('playButtonCenter');
+                const playButton = document.getElementById('playButton');
+                
+                if (playButtonCenter) playButtonCenter.addEventListener('click', () => this.togglePlay());
+                if (playButton) playButton.addEventListener('click', () => this.togglePlay());
+
+                // Volume controls
+                const volumeButton = document.getElementById('volumeButton');
+                const volumeSlider = document.getElementById('volumeSlider');
+                
+                if (volumeButton) volumeButton.addEventListener('click', () => this.toggleMute());
+                if (volumeSlider) volumeSlider.addEventListener('input', (e) => this.setVolume(e.target.value / 100));
+
+                // Fullscreen
+                const fullscreenButton = document.getElementById('fullscreenButton');
+                if (fullscreenButton) fullscreenButton.addEventListener('click', () => this.toggleFullscreen());
+
+                // Video events (for non-YouTube videos)
+                if (!this.isYoutube) {
+                    const video = document.getElementById('videoElement');
+                    if (video) {
+                        video.addEventListener('loadstart', () => this.setState({ isLoading: true }));
+                        video.addEventListener('canplay', () => this.setState({ isLoading: false }));
+                        video.addEventListener('play', () => this.setState({ isPlaying: true }));
+                        video.addEventListener('pause', () => this.setState({ isPlaying: false }));
+                        video.addEventListener('timeupdate', () => this.saveProgress());
+                        video.addEventListener('error', () => this.handleError());
+                    }
+                }
+
+                // Mouse movement for controls
+                const container = this.container.querySelector('.video-container');
+                if (container) {
+                    container.addEventListener('mousemove', () => this.showControlsTemporarily());
+                    container.addEventListener('mouseleave', () => this.hideControls());
+                }
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+            }
+
+            togglePlay() {
+                if (this.isYoutube) {
+                    // For YouTube, we'll simulate the behavior
+                    this.setState({ isPlaying: !this.state.isPlaying });
+                } else {
+                    const video = document.getElementById('videoElement');
+                    if (video) {
+                        if (video.paused) {
+                            video.play();
+                        } else {
+                            video.pause();
+                        }
+                    }
+                }
+                this.render();
+            }
+
+            toggleMute() {
+                this.setState({ isMuted: !this.state.isMuted });
+                const video = document.getElementById('videoElement');
+                if (video) video.muted = this.state.isMuted;
+                this.render();
+            }
+
+            setVolume(volume) {
+                this.setState({ volume, isMuted: volume === 0 });
+                const video = document.getElementById('videoElement');
+                if (video) {
+                    video.volume = volume;
+                    video.muted = volume === 0;
+                }
+            }
+
+            toggleFullscreen() {
+                const container = this.container.querySelector('.video-container');
+                if (!document.fullscreenElement) {
+                    container.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+
+            showControlsTemporarily() {
+                this.setState({ showControls: true });
+                clearTimeout(this.hideControlsTimeout);
+                if (this.state.isPlaying) {
+                    this.hideControlsTimeout = setTimeout(() => this.hideControls(), 3000);
+                }
+            }
+
+            hideControls() {
+                if (this.state.isPlaying) {
+                    this.setState({ showControls: false });
+                    const overlay = document.getElementById('controlsOverlay');
+                    if (overlay) overlay.className = 'controls-overlay hide';
+                }
+            }
+
+            handleKeyboard(e) {
+                if (e.target.tagName === 'INPUT') return;
+                
+                switch (e.code) {
+                    case 'Space':
+                        e.preventDefault();
+                        this.togglePlay();
+                        break;
+                    case 'KeyF':
+                        e.preventDefault();
+                        this.toggleFullscreen();
+                        break;
+                    case 'KeyM':
+                        e.preventDefault();
+                        this.toggleMute();
+                        break;
+                }
+            }
+
+            setState(newState) {
+                this.state = { ...this.state, ...newState };
+            }
+
+            getSavedProgress() {
+                try {
+                    const saved = localStorage.getItem(this.progressKey);
+                    return saved ? parseFloat(saved) : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            saveProgress() {
+                const video = document.getElementById('videoElement');
+                if (video && video.currentTime > 10) {
+                    try {
+                        localStorage.setItem(this.progressKey, video.currentTime.toString());
+                    } catch {}
+                }
+            }
+
+            checkSavedProgress() {
+                const savedProgress = this.getSavedProgress();
+                if (savedProgress && savedProgress > 30) {
+                    this.showResumeModal(savedProgress);
+                }
+            }
+
+            showResumeModal(timestamp) {
+                const formatTime = (seconds) => {
+                    const hours = Math.floor(seconds / 3600);
+                    const minutes = Math.floor((seconds % 3600) / 60);
+                    const secs = Math.floor(seconds % 60);
+                    
+                    if (hours > 0) {
+                        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    }
+                    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+                };
+
+                const modal = document.createElement('div');
+                modal.className = 'resume-modal';
+                modal.innerHTML = `
+                    <div class="resume-content">
+                        <div class="resume-title">Resume Playback</div>
+                        <div class="resume-description">You were watching this video. Would you like to continue from where you left off?</div>
+                        <div class="resume-time">${formatTime(timestamp)}</div>
+                        <div class="resume-label">Last watched position</div>
+                        <div class="resume-buttons">
+                            <button class="resume-button primary" onclick="this.parentElement.parentElement.parentElement.remove(); window.videoPlayer.resumeFromTimestamp(${timestamp})">
+                                Resume from ${formatTime(timestamp)}
+                            </button>
+                            <button class="resume-button secondary" onclick="this.parentElement.parentElement.parentElement.remove();">
+                                Start from beginning
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            resumeFromTimestamp(timestamp) {
+                const video = document.getElementById('videoElement');
+                if (video) {
+                    video.currentTime = timestamp;
+                }
+            }
+
+            handleError() {
+                this.container.innerHTML = `
+                    <div class="video-container">
+                        <div class="error-message">
+                            <h3>Video Error</h3>
+                            <p>Failed to load video. Please check the URL and try again.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize player with URL from query parameter or default
+        function initPlayer() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoUrl = urlParams.get('url') || urlParams.get('video') || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+            
+            window.videoPlayer = new DistractionFreePlayer('videoPlayer', videoUrl);
+        }
+
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPlayer);
+        } else {
+            initPlayer();
+        }
+    </script>
+</body>
+</html>
