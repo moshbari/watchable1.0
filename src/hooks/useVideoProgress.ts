@@ -21,13 +21,19 @@ export const useVideoProgress = (videoUrl: string) => {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
+      console.log('Checking stored progress for:', videoUrl);
       if (stored) {
         const progressData: VideoProgress[] = JSON.parse(stored);
+        console.log('All stored progress:', progressData);
         const videoProgress = progressData.find(p => p.url === videoUrl);
+        console.log('Progress for current video:', videoProgress);
         
         if (videoProgress && videoProgress.timestamp >= RESUME_THRESHOLD) {
+          console.log('Setting saved progress and showing resume modal:', videoProgress.timestamp);
           setSavedProgress(videoProgress.timestamp);
           setShowResumeModal(true);
+        } else {
+          console.log('No progress found or below threshold');
         }
       }
     } catch (error) {
