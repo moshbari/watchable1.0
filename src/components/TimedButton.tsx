@@ -43,8 +43,9 @@ export const TimedButton: React.FC = () => {
     setPreviewKey(prev => prev + 1);
   };
 
-  const generateHTML = () => {
-    return `<div class="timed-button-container" style="text-align: ${config.alignment};">
+  const generateHTMLCSS = () => {
+    return `<!-- HTML & CSS for Timed Button -->
+<div class="timed-button-container" style="text-align: ${config.alignment};">
   <div class="timed-button" style="
     display: none;
     animation: fadeIn 0.5s ease-in forwards;
@@ -87,22 +88,48 @@ export const TimedButton: React.FC = () => {
 .timed-button {
   animation-fill-mode: forwards;
 }
-</style>
+</style>`;
+  };
 
+  const generateJavaScript = () => {
+    return `// JavaScript for Timed Button - Place this in <head> or before </body>
 <script>
 // Show the button after delay
 setTimeout(() => {
-  document.querySelector('.timed-button').style.display = 'block';
+  const button = document.querySelector('.timed-button');
+  if (button) {
+    button.style.display = 'block';
+  }
 }, ${config.delay * 1000});
 </script>`;
   };
 
-  const handleCopy = async () => {
+  const generateHTML = () => {
+    return generateHTMLCSS();
+  };
+
+  const handleCopyHTML = async () => {
     try {
-      await navigator.clipboard.writeText(generateHTML());
+      await navigator.clipboard.writeText(generateHTMLCSS());
       toast({
         title: "Copied!",
-        description: "Timed button HTML code copied to clipboard",
+        description: "HTML & CSS code copied to clipboard",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCopyJS = async () => {
+    try {
+      await navigator.clipboard.writeText(generateJavaScript());
+      toast({
+        title: "Copied!",
+        description: "JavaScript code copied to clipboard",
       });
     } catch (err) {
       toast({
@@ -240,19 +267,43 @@ setTimeout(() => {
             </div>
 
             {/* Generated Code */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Generated HTML Code</Label>
-                <Button onClick={handleCopy} size="sm" variant="outline">
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy
-                </Button>
+            <div className="space-y-4">
+              {/* HTML & CSS Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>HTML & CSS Code</Label>
+                  <Button onClick={handleCopyHTML} size="sm" variant="outline">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy HTML & CSS
+                  </Button>
+                </div>
+                <textarea
+                  readOnly
+                  value={generateHTMLCSS()}
+                  className="w-full h-32 p-3 text-sm font-mono bg-muted border border-border rounded-md resize-none"
+                />
               </div>
-              <textarea
-                readOnly
-                value={generateHTML()}
-                className="w-full h-32 p-3 text-sm font-mono bg-muted border border-border rounded-md resize-none"
-              />
+
+              {/* JavaScript Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>JavaScript Code</Label>
+                  <Button onClick={handleCopyJS} size="sm" variant="outline">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy JavaScript
+                  </Button>
+                </div>
+                <textarea
+                  readOnly
+                  value={generateJavaScript()}
+                  className="w-full h-24 p-3 text-sm font-mono bg-muted border border-border rounded-md resize-none"
+                />
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md dark:bg-yellow-900/20 dark:border-yellow-800">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <strong>Note:</strong> If your page builder doesn't accept inline JavaScript, copy the JavaScript code above and paste it in your page's Header Scripts or Footer Scripts section (before the closing &lt;/body&gt; tag).
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </CollapsibleContent>
