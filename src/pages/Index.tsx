@@ -6,6 +6,7 @@ import { VideoUrlInput } from '@/components/VideoUrlInput';
 import { EmbedCodeGenerator } from '@/components/EmbedCodeGenerator';
 import { TimedButton } from '@/components/TimedButton';
 import { PlayButtonCustomizer } from '@/components/PlayButtonCustomizer';
+import { VideoOverlayButton, type OverlayButtonConfig } from '@/components/VideoOverlayButton';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -14,6 +15,18 @@ const Index = () => {
   const [playButtonColor, setPlayButtonColor] = useState('#ff0000');
   const [playButtonSize, setPlayButtonSize] = useState(96);
   const [showCustomizer, setShowCustomizer] = useState(false);
+  const [overlayButtonConfig, setOverlayButtonConfig] = useState<OverlayButtonConfig>({
+    enabled: false,
+    text: 'Click Here!',
+    url: 'https://example.com',
+    delay: 3,
+    position: 'top-right',
+    width: '200px',
+    height: '50px',
+    backgroundColor: '#3b82f6',
+    textColor: '#ffffff',
+    fontSize: '16px'
+  });
   const { toast } = useToast();
 
   // Check for video parameter in URL on component mount
@@ -92,6 +105,7 @@ const Index = () => {
               onError={handleVideoError}
               playButtonColor={playButtonColor}
               playButtonSize={playButtonSize}
+              overlayButtonConfig={overlayButtonConfig}
             />
           </div>
 
@@ -104,6 +118,10 @@ const Index = () => {
               onSizeChange={setPlayButtonSize}
               isOpen={showCustomizer}
               onToggle={setShowCustomizer}
+            />
+            <VideoOverlayButton
+              config={overlayButtonConfig}
+              onConfigChange={setOverlayButtonConfig}
             />
             <EmbedCodeGenerator 
               videoUrl={currentVideo} 

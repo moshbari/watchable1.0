@@ -7,12 +7,14 @@ import { YouTubePlayer } from './YouTubePlayer';
 import { useVideoProgress } from '@/hooks/useVideoProgress';
 import { extractVideoUrl, isYouTubeUrl, getYouTubeId } from '@/lib/videoUtils';
 import { cn } from '@/lib/utils';
+import { OverlayButton, type OverlayButtonConfig } from './VideoOverlayButton';
 
 interface VideoPlayerProps {
   src: string;
   onError?: (error: string) => void;
   playButtonColor?: string;
   playButtonSize?: number;
+  overlayButtonConfig?: OverlayButtonConfig;
 }
 
 interface VideoState {
@@ -30,7 +32,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   src, 
   onError, 
   playButtonColor = '#ff0000', 
-  playButtonSize = 96 
+  playButtonSize = 96,
+  overlayButtonConfig
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -375,6 +378,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </div>
             </div>
           </>
+        )}
+        
+        {/* Overlay Button */}
+        {overlayButtonConfig && (
+          <OverlayButton 
+            config={overlayButtonConfig} 
+            onVideoContainer={true}
+          />
         )}
       </div>
 
