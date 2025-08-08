@@ -6,6 +6,7 @@ import { VideoUrlInput } from '@/components/VideoUrlInput';
 import { EmbedCodeGenerator } from '@/components/EmbedCodeGenerator';
 import { TimedButton } from '@/components/TimedButton';
 import { PlayButtonCustomizer } from '@/components/PlayButtonCustomizer';
+import { ExternalVideoScript } from '@/components/ExternalVideoScript';
 import { VideoOverlayButton, type OverlayButtonConfig } from '@/components/VideoOverlayButton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -129,6 +130,7 @@ const Index = () => {
               playButtonSize={playButtonSize}
             />
             <TimedButton />
+            <ExternalVideoScript />
           </div>
 
           {/* Instructions */}
