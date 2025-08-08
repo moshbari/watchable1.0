@@ -94,6 +94,19 @@ export const TimedButton: React.FC = () => {
   const generateJavaScript = () => {
     return `// JavaScript for Timed Button - Place this in <head> or before </body>
 <script>
+// Center the video player and show the button after delay
+document.addEventListener('DOMContentLoaded', function() {
+  // Center any video elements
+  const videos = document.querySelectorAll('video, iframe[src*="youtube"], iframe[src*="vimeo"], iframe[src*="embed"]');
+  videos.forEach(video => {
+    if (!video.closest('center')) {
+      const center = document.createElement('center');
+      video.parentNode.insertBefore(center, video);
+      center.appendChild(video);
+    }
+  });
+});
+
 // Show the button after delay
 setTimeout(() => {
   const button = document.querySelector('.timed-button');
