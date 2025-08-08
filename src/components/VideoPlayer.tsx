@@ -242,7 +242,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }
 
   return (
-    <>
+    <center>
       <div 
         ref={containerRef}
         className={cn(
@@ -397,6 +397,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           timestamp={savedProgress}
         />
       )}
-    </>
+    </center>
   );
 };
