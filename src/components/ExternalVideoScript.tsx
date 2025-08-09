@@ -10,25 +10,35 @@ import { useToast } from '@/hooks/use-toast';
 interface ExternalScriptConfig {
   text: string;
   url: string;
-  delay: number;
+  delayHours: number;
+  delayMinutes: number;
+  delaySeconds: number;
   position: string;
   width: string;
   height: string;
   backgroundColor: string;
+  borderColor: string;
   textColor: string;
   fontSize: string;
+  fontWeight: string;
+  fontFamily: string;
 }
 
 const defaultConfig: ExternalScriptConfig = {
-  text: 'Click Here!',
-  url: 'https://example.com',
-  delay: 3,
-  position: 'top-right',
-  width: '200px',
-  height: '50px',
+  text: 'Click Here to Secure Your Spot Now',
+  url: 'https://99dfy.com',
+  delayHours: 0,
+  delayMinutes: 0,
+  delaySeconds: 3,
+  position: 'center',
+  width: '800px',
+  height: '80px',
   backgroundColor: '#3b82f6',
+  borderColor: '#1d4ed8',
   textColor: '#ffffff',
-  fontSize: '16px'
+  fontSize: '32px',
+  fontWeight: 'bold',
+  fontFamily: 'Verdana, sans-serif'
 };
 
 export const ExternalVideoScript: React.FC = () => {
@@ -40,7 +50,12 @@ export const ExternalVideoScript: React.FC = () => {
     setConfig(prev => ({ ...prev, [key]: value }));
   };
 
+  const getTotalDelaySeconds = () => {
+    return config.delayHours * 3600 + config.delayMinutes * 60 + config.delaySeconds;
+  };
+
   const generateScript = () => {
+    const totalDelaySeconds = getTotalDelaySeconds();
     const positionStyles = {
       'top-left': 'top: 20px; left: 20px;',
       'top-center': 'top: 20px; left: 50%; transform: translateX(-50%);',
@@ -53,8 +68,10 @@ export const ExternalVideoScript: React.FC = () => {
       'bottom-right': 'bottom: 20px; right: 20px;'
     };
 
-    return `// Universal Video Overlay Button Script
-// Place this script in the <head> or before </body> tag
+    return `<!-- HTML for Page Builders -->
+<div id="video-overlay-container" style="display: none;"></div>
+
+<!-- JavaScript (Place in separate code block or before </body>) -->
 <script>
 (function() {
   'use strict';
@@ -63,13 +80,16 @@ export const ExternalVideoScript: React.FC = () => {
   const config = {
     text: '${config.text}',
     url: '${config.url}',
-    delay: ${config.delay},
+    delay: ${totalDelaySeconds},
     position: '${config.position}',
     width: '${config.width}',
     height: '${config.height}',
     backgroundColor: '${config.backgroundColor}',
+    borderColor: '${config.borderColor}',
     textColor: '${config.textColor}',
-    fontSize: '${config.fontSize}'
+    fontSize: '${config.fontSize}',
+    fontWeight: '${config.fontWeight}',
+    fontFamily: '${config.fontFamily}'
   };
 
   // Position styles
@@ -99,18 +119,23 @@ export const ExternalVideoScript: React.FC = () => {
     button.textContent = config.text;
     button.style.cssText = \`
       position: absolute;
-      \${positionStyles[config.position] || positionStyles['top-right']}
+      \${positionStyles[config.position] || positionStyles['center']}
       width: \${config.width};
       height: \${config.height};
+      max-width: 90vw;
+      max-height: 20vh;
       background-color: \${config.backgroundColor};
+      border: 4px solid \${config.borderColor};
       color: \${config.textColor};
       font-size: \${config.fontSize};
-      font-weight: 600;
+      font-weight: \${config.fontWeight};
+      font-family: \${config.fontFamily};
       text-decoration: none;
       border-radius: 8px;
       display: none;
       align-items: center;
       justify-content: center;
+      text-align: center;
       z-index: 9999;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
@@ -118,10 +143,36 @@ export const ExternalVideoScript: React.FC = () => {
       animation: slideIn 0.5s ease-out forwards;
       animation-delay: \${config.delay}s;
       opacity: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      border: none;
       outline: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     \`;
+    
+    // Responsive font size
+    const updateResponsiveFontSize = () => {
+      const baseFontSize = parseInt(config.fontSize);
+      const screenWidth = window.innerWidth;
+      let responsiveFontSize = baseFontSize;
+      
+      if (screenWidth < 768) {
+        responsiveFontSize = Math.max(baseFontSize * 0.6, 16);
+        button.style.width = 'calc(90vw - 40px)';
+        button.style.height = 'auto';
+        button.style.minHeight = '60px';
+        button.style.padding = '12px 16px';
+        button.style.whiteSpace = 'normal';
+        button.style.lineHeight = '1.2';
+      } else if (screenWidth < 1024) {
+        responsiveFontSize = Math.max(baseFontSize * 0.8, 20);
+        button.style.width = 'min(80vw, ' + config.width + ')';
+      }
+      
+      button.style.fontSize = responsiveFontSize + 'px';
+    };
+    
+    updateResponsiveFontSize();
+    window.addEventListener('resize', updateResponsiveFontSize);
 
     // Add hover effects
     button.addEventListener('mouseenter', function() {
@@ -307,7 +358,7 @@ export const ExternalVideoScript: React.FC = () => {
                   id="ext-button-text"
                   value={config.text}
                   onChange={(e) => updateConfig('text', e.target.value)}
-                  placeholder="Click Here!"
+                  placeholder="Click Here to Secure Your Spot Now"
                 />
               </div>
               
@@ -317,19 +368,52 @@ export const ExternalVideoScript: React.FC = () => {
                   id="ext-button-url"
                   value={config.url}
                   onChange={(e) => updateConfig('url', e.target.value)}
-                  placeholder="https://example.com"
+                  placeholder="https://99dfy.com"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="ext-delay">Delay (seconds)</Label>
-                <Input
-                  id="ext-delay"
-                  type="number"
-                  min="0"
-                  value={config.delay}
-                  onChange={(e) => updateConfig('delay', parseInt(e.target.value) || 0)}
-                />
+                <Label>Delay Time</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label htmlFor="ext-delay-hours" className="text-xs">Hours</Label>
+                    <Input
+                      id="ext-delay-hours"
+                      type="number"
+                      min="0"
+                      value={config.delayHours}
+                      onChange={(e) => updateConfig('delayHours', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ext-delay-minutes" className="text-xs">Minutes</Label>
+                    <Input
+                      id="ext-delay-minutes"
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={config.delayMinutes}
+                      onChange={(e) => updateConfig('delayMinutes', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ext-delay-seconds" className="text-xs">Seconds</Label>
+                    <Input
+                      id="ext-delay-seconds"
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={config.delaySeconds}
+                      onChange={(e) => updateConfig('delaySeconds', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Total delay: {getTotalDelaySeconds()} seconds
+                </p>
               </div>
               
               <div className="space-y-2">
@@ -391,6 +475,24 @@ export const ExternalVideoScript: React.FC = () => {
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="ext-border-color">Border Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="ext-border-color"
+                    type="color"
+                    value={config.borderColor}
+                    onChange={(e) => updateConfig('borderColor', e.target.value)}
+                    className="w-16 h-10 p-1"
+                  />
+                  <Input
+                    value={config.borderColor}
+                    onChange={(e) => updateConfig('borderColor', e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="ext-text-color">Text Color</Label>
                 <div className="flex gap-2">
                   <Input
@@ -406,6 +508,49 @@ export const ExternalVideoScript: React.FC = () => {
                     className="flex-1"
                   />
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="ext-font-size">Font Size</Label>
+                <Input
+                  id="ext-font-size"
+                  value={config.fontSize}
+                  onChange={(e) => updateConfig('fontSize', e.target.value)}
+                  placeholder="32px"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="ext-font-weight">Font Weight</Label>
+                <select
+                  id="ext-font-weight"
+                  value={config.fontWeight}
+                  onChange={(e) => updateConfig('fontWeight', e.target.value)}
+                  className="w-full p-2 border border-input rounded-md bg-background"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="bold">Bold</option>
+                  <option value="600">Semi-bold (600)</option>
+                  <option value="700">Bold (700)</option>
+                  <option value="800">Extra-bold (800)</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="ext-font-family">Font Family</Label>
+                <select
+                  id="ext-font-family"
+                  value={config.fontFamily}
+                  onChange={(e) => updateConfig('fontFamily', e.target.value)}
+                  className="w-full p-2 border border-input rounded-md bg-background"
+                >
+                  <option value="Verdana, sans-serif">Verdana</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="Helvetica, sans-serif">Helvetica</option>
+                  <option value="Georgia, serif">Georgia</option>
+                  <option value="Times New Roman, serif">Times New Roman</option>
+                  <option value="-apple-system, BlinkMacSystemFont, sans-serif">System Default</option>
+                </select>
               </div>
             </div>
 
@@ -425,7 +570,10 @@ export const ExternalVideoScript: React.FC = () => {
               />
               <div className="p-3 bg-green-50 border border-green-200 rounded-md dark:bg-green-900/20 dark:border-green-800">
                 <p className="text-sm text-green-800 dark:text-green-200">
-                  <strong>How to use:</strong> Copy this script and inject it into any website using browser developer tools, a browser extension, or add it to the site's HTML if you have access. It will automatically detect video players and add overlay buttons.
+                  <strong>For Page Builders:</strong> Copy the HTML part into your HTML editor, then add the JavaScript part to a separate "Custom Code" or "JavaScript" section. The script is fully responsive and works on all devices.
+                </p>
+                <p className="text-sm text-green-800 dark:text-green-200 mt-2">
+                  <strong>For Website Injection:</strong> Copy the entire code and inject it using browser developer tools, browser extensions, or add it to your site's HTML.
                 </p>
               </div>
             </div>
