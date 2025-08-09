@@ -10,24 +10,34 @@ import { useToast } from '@/hooks/use-toast';
 interface TimedButtonConfig {
   text: string;
   url: string;
-  delay: number;
+  delayHours: number;
+  delayMinutes: number;
+  delaySeconds: number;
   width: string;
   height: string;
   backgroundColor: string;
+  borderColor: string;
   textColor: string;
   fontSize: string;
+  fontWeight: string;
+  fontFamily: string;
   alignment: 'left' | 'center' | 'right';
 }
 
 const defaultConfig: TimedButtonConfig = {
-  text: 'Click Here!',
-  url: 'https://example.com',
-  delay: 3,
-  width: '200px',
-  height: '50px',
+  text: 'Click Here to Secure Your Spot Now',
+  url: 'https://99dfy.com',
+  delayHours: 0,
+  delayMinutes: 0,
+  delaySeconds: 3,
+  width: '800px',
+  height: '80px',
   backgroundColor: '#3b82f6',
+  borderColor: '#1d4ed8',
   textColor: '#ffffff',
-  fontSize: '16px',
+  fontSize: '32px',
+  fontWeight: 'bold',
+  fontFamily: 'Verdana, sans-serif',
   alignment: 'center'
 };
 
@@ -43,28 +53,40 @@ export const TimedButton: React.FC = () => {
     setPreviewKey(prev => prev + 1);
   };
 
+  const getTotalDelaySeconds = () => {
+    return config.delayHours * 3600 + config.delayMinutes * 60 + config.delaySeconds;
+  };
+
   const generateHTMLCSS = () => {
+    const totalDelaySeconds = getTotalDelaySeconds();
     return `<!-- HTML & CSS for Timed Button -->
 <div class="timed-button-container" style="text-align: ${config.alignment};">
   <div class="timed-button" style="
     display: none;
     animation: fadeIn 0.5s ease-in forwards;
-    animation-delay: ${config.delay}s;
+    animation-delay: ${totalDelaySeconds}s;
   ">
     <a href="${config.url}" target="_blank" style="
       display: inline-block;
       width: ${config.width};
       height: ${config.height};
+      max-width: 90vw;
+      max-height: 20vh;
       background-color: ${config.backgroundColor};
+      border: 4px solid ${config.borderColor};
       color: ${config.textColor};
       font-size: ${config.fontSize};
+      font-weight: ${config.fontWeight};
+      font-family: ${config.fontFamily};
       text-decoration: none;
       border-radius: 8px;
       line-height: ${config.height};
       text-align: center;
-      font-weight: 600;
-      transition: all 0.3s ease;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     " 
     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.2)'"
     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
@@ -88,11 +110,32 @@ export const TimedButton: React.FC = () => {
 .timed-button {
   animation-fill-mode: forwards;
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .timed-button a {
+    width: calc(90vw - 40px) !important;
+    height: auto !important;
+    min-height: 60px !important;
+    padding: 12px 16px !important;
+    white-space: normal !important;
+    line-height: 1.2 !important;
+    font-size: 20px !important;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .timed-button a {
+    width: min(80vw, ${config.width}) !important;
+    font-size: 26px !important;
+  }
+}
 </style>`;
   };
 
   const generateJavaScript = () => {
-    return `// JavaScript for Timed Button - Place this in <head> or before </body>
+    const totalDelaySeconds = getTotalDelaySeconds();
+    return `<!-- JavaScript (Place in separate code block or before </body>) -->
 <script>
 // Center the video player and show the button after delay
 document.addEventListener('DOMContentLoaded', function() {
@@ -113,12 +156,8 @@ setTimeout(() => {
   if (button) {
     button.style.display = 'block';
   }
-}, ${config.delay * 1000});
+}, ${totalDelaySeconds * 1000});
 </script>`;
-  };
-
-  const generateHTML = () => {
-    return generateHTMLCSS();
   };
 
   const handleCopyHTML = async () => {
@@ -175,7 +214,7 @@ setTimeout(() => {
                   id="button-text"
                   value={config.text}
                   onChange={(e) => updateConfig('text', e.target.value)}
-                  placeholder="Click Here!"
+                  placeholder="Click Here to Secure Your Spot Now"
                 />
               </div>
               
@@ -185,19 +224,52 @@ setTimeout(() => {
                   id="button-url"
                   value={config.url}
                   onChange={(e) => updateConfig('url', e.target.value)}
-                  placeholder="https://example.com"
+                  placeholder="https://99dfy.com"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="delay">Delay (seconds)</Label>
-                <Input
-                  id="delay"
-                  type="number"
-                  min="0"
-                  value={config.delay}
-                  onChange={(e) => updateConfig('delay', parseInt(e.target.value) || 0)}
-                />
+                <Label>Delay Time</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label htmlFor="delay-hours" className="text-xs">Hours</Label>
+                    <Input
+                      id="delay-hours"
+                      type="number"
+                      min="0"
+                      value={config.delayHours}
+                      onChange={(e) => updateConfig('delayHours', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="delay-minutes" className="text-xs">Minutes</Label>
+                    <Input
+                      id="delay-minutes"
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={config.delayMinutes}
+                      onChange={(e) => updateConfig('delayMinutes', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="delay-seconds" className="text-xs">Seconds</Label>
+                    <Input
+                      id="delay-seconds"
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={config.delaySeconds}
+                      onChange={(e) => updateConfig('delaySeconds', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Total delay: {getTotalDelaySeconds()} seconds
+                </p>
               </div>
               
               <div className="space-y-2">
@@ -220,7 +292,7 @@ setTimeout(() => {
                   id="width"
                   value={config.width}
                   onChange={(e) => updateConfig('width', e.target.value)}
-                  placeholder="200px"
+                  placeholder="800px"
                 />
               </div>
               
@@ -230,7 +302,7 @@ setTimeout(() => {
                   id="height"
                   value={config.height}
                   onChange={(e) => updateConfig('height', e.target.value)}
-                  placeholder="50px"
+                  placeholder="80px"
                 />
               </div>
               
@@ -253,6 +325,24 @@ setTimeout(() => {
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="border-color">Border Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="border-color"
+                    type="color"
+                    value={config.borderColor}
+                    onChange={(e) => updateConfig('borderColor', e.target.value)}
+                    className="w-16 h-10 p-1"
+                  />
+                  <Input
+                    value={config.borderColor}
+                    onChange={(e) => updateConfig('borderColor', e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="text-color">Text Color</Label>
                 <div className="flex gap-2">
                   <Input
@@ -268,6 +358,49 @@ setTimeout(() => {
                     className="flex-1"
                   />
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="font-size">Font Size</Label>
+                <Input
+                  id="font-size"
+                  value={config.fontSize}
+                  onChange={(e) => updateConfig('fontSize', e.target.value)}
+                  placeholder="32px"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="font-weight">Font Weight</Label>
+                <select
+                  id="font-weight"
+                  value={config.fontWeight}
+                  onChange={(e) => updateConfig('fontWeight', e.target.value)}
+                  className="w-full p-2 border border-input rounded-md bg-background"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="bold">Bold</option>
+                  <option value="600">Semi-bold (600)</option>
+                  <option value="700">Bold (700)</option>
+                  <option value="800">Extra-bold (800)</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="font-family">Font Family</Label>
+                <select
+                  id="font-family"
+                  value={config.fontFamily}
+                  onChange={(e) => updateConfig('fontFamily', e.target.value)}
+                  className="w-full p-2 border border-input rounded-md bg-background"
+                >
+                  <option value="Verdana, sans-serif">Verdana</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="Helvetica, sans-serif">Helvetica</option>
+                  <option value="Georgia, serif">Georgia</option>
+                  <option value="Times New Roman, serif">Times New Roman</option>
+                  <option value="-apple-system, BlinkMacSystemFont, sans-serif">System Default</option>
+                </select>
               </div>
             </div>
 
@@ -313,7 +446,7 @@ setTimeout(() => {
                 />
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md dark:bg-yellow-900/20 dark:border-yellow-800">
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    <strong>Note:</strong> If your page builder doesn't accept inline JavaScript, copy the JavaScript code above and paste it in your page's Header Scripts or Footer Scripts section (before the closing &lt;/body&gt; tag).
+                    <strong>For Page Builders:</strong> Copy the HTML & CSS first, then add the JavaScript to a separate "Custom Code" or "JavaScript" section. The button is fully responsive and adapts to different screen sizes.
                   </p>
                 </div>
               </div>
@@ -331,17 +464,20 @@ const TimedButtonPreview: React.FC<{ config: TimedButtonConfig }> = ({ config })
 
   useEffect(() => {
     setShowButton(false);
+    const totalDelaySeconds = config.delayHours * 3600 + config.delayMinutes * 60 + config.delaySeconds;
     const timer = setTimeout(() => {
       setShowButton(true);
-    }, config.delay * 1000);
+    }, totalDelaySeconds * 1000);
 
     return () => clearTimeout(timer);
-  }, [config.delay]);
+  }, [config.delayHours, config.delayMinutes, config.delaySeconds]);
+
+  const totalDelaySeconds = config.delayHours * 3600 + config.delayMinutes * 60 + config.delaySeconds;
 
   if (!showButton) {
     return (
       <div className="text-muted-foreground text-sm">
-        Button will appear in {config.delay} seconds...
+        Button will appear in {totalDelaySeconds} seconds...
       </div>
     );
   }
@@ -355,16 +491,23 @@ const TimedButtonPreview: React.FC<{ config: TimedButtonConfig }> = ({ config })
           display: 'inline-block',
           width: config.width,
           height: config.height,
+          maxWidth: '90vw',
+          maxHeight: '20vh',
           backgroundColor: config.backgroundColor,
+          border: `4px solid ${config.borderColor}`,
           color: config.textColor,
           fontSize: config.fontSize,
+          fontWeight: config.fontWeight,
+          fontFamily: config.fontFamily,
           textDecoration: 'none',
           borderRadius: '8px',
           lineHeight: config.height,
           textAlign: 'center',
-          fontWeight: '600',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
           transition: 'all 0.3s ease',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
         }}
         className="hover:scale-105 hover:shadow-lg"
       >
